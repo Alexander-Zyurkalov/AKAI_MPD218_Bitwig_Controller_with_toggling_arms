@@ -6,9 +6,10 @@ import com.bitwig.extension.controller.api.*;
 public class MPD218Extension extends ControllerExtension {
 
    private MidiIn midiInPort;
-//   private MidiOut midiOutPort;
+   private MidiOut midiOutPort;
    private NoteInput noteInput;
    private CursorDevice cursorDevice;
+   TrackBank trackBank;
    private CursorRemoteControlsPage remoteControlsPage;
 
    protected MPD218Extension(MPD218ExtensionDefinition definition, ControllerHost host) {
@@ -21,7 +22,7 @@ public class MPD218Extension extends ControllerExtension {
       noteInput = midiInPort.createNoteInput("MPD218 Pads", "89????", "99????", "DF????", "EF??", "AF????", "D?????");
       midiInPort.setMidiCallback(this::onMidi);
 
-//      midiOutPort = getHost().getMidiOutPort(0);
+      midiOutPort = getHost().getMidiOutPort(0);
       cursorDevice = getHost().createCursorTrack("MPD218_CursorTrack", "MPD218 Cursor Track", 0, 0, true).createCursorDevice("MPD218_CursorDevice", "MPD218 Cursor Device", 0, CursorDeviceFollowMode.FIRST_DEVICE);
       remoteControlsPage = cursorDevice.createCursorRemoteControlsPage( 6);
       for (int i = 0; i < 6; i++) {
@@ -29,6 +30,14 @@ public class MPD218Extension extends ControllerExtension {
             remoteControlsPage.getParameter(i).setIndication(true);
       }
 
+      trackBank = getHost().createTrackBank(4*4, 0, 0);
+      for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
+         trackBank.getItemAt(i).arm().markInterested();
+         int finalI = i;
+         trackBank.getItemAt(i).arm().addValueObserver( (value) -> {
+            midiOutPort.sendMidi(0x90, 36 + finalI, value ? 127 : 0);
+         });
+      }
       getHost().println("Akai Professional MPD218 Bitwig Controller Script");
       getHost().showPopupNotification("MPD218 Initialized");
    }
@@ -37,7 +46,12 @@ public class MPD218Extension extends ControllerExtension {
       if (status == 0xb1) {
          remoteControlsPage.getParameter(data1).inc(uint7ToInt7(data2), 128);
       }
-
+      else if (status == 0x80) {
+         int num = data1 - 36;
+         if (num >=0 && num < trackBank.getSizeOfBank()) {
+            trackBank.getItemAt(num).arm().toggle();
+         }
+      }
    }
 
    private int uint7ToInt7(int value) {
