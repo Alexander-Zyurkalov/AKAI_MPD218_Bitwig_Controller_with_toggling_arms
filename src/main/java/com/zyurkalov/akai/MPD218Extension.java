@@ -28,14 +28,12 @@ public class MPD218Extension extends ControllerExtension {
 
    private void onMidi(int status, int data1, int data2) {
       if (status == 0xb1) {
-         double delta = uint7ToInt7(data2) / 128.0;
-         remoteControlsPage.getParameter(data1).inc(delta, 128);
-
+         remoteControlsPage.getParameter(data1).inc(uint7ToInt7(data2), 128);
       }
    }
 
    private int uint7ToInt7(int value) {
-      return value - 64;
+      return value >= 64 ? value - 128 : value;
    }
 
    @Override
