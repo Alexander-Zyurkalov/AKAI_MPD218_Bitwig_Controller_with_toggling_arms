@@ -6,7 +6,8 @@ import com.bitwig.extension.controller.api.*;
 public class MPD218Extension extends ControllerExtension {
 
    private MidiIn midiInPort;
-   private NoteInput padNotes;
+//   private MidiOut midiOutPort;
+   private NoteInput noteInput;
    private CursorDevice cursorDevice;
    private CursorRemoteControlsPage remoteControlsPage;
 
@@ -17,10 +18,16 @@ public class MPD218Extension extends ControllerExtension {
    @Override
    public void init() {
       midiInPort = getHost().getMidiInPort(0);
-      padNotes = midiInPort.createNoteInput("MPD218 Pads", "89????", "99????", "DF????", "EF??", "AF????");
+      noteInput = midiInPort.createNoteInput("MPD218 Pads", "89????", "99????", "DF????", "EF??", "AF????", "D?????");
       midiInPort.setMidiCallback(this::onMidi);
+
+//      midiOutPort = getHost().getMidiOutPort(0);
       cursorDevice = getHost().createCursorTrack("MPD218_CursorTrack", "MPD218 Cursor Track", 0, 0, true).createCursorDevice("MPD218_CursorDevice", "MPD218 Cursor Device", 0, CursorDeviceFollowMode.FIRST_DEVICE);
-      remoteControlsPage = cursorDevice.createCursorRemoteControlsPage( 8);
+      remoteControlsPage = cursorDevice.createCursorRemoteControlsPage( 6);
+      for (int i = 0; i < 6; i++) {
+            remoteControlsPage.getParameter(i).markInterested();
+            remoteControlsPage.getParameter(i).setIndication(true);
+      }
 
       getHost().println("Akai Professional MPD218 Bitwig Controller Script");
       getHost().showPopupNotification("MPD218 Initialized");
@@ -30,6 +37,7 @@ public class MPD218Extension extends ControllerExtension {
       if (status == 0xb1) {
          remoteControlsPage.getParameter(data1).inc(uint7ToInt7(data2), 128);
       }
+
    }
 
    private int uint7ToInt7(int value) {
