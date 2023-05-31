@@ -37,6 +37,8 @@ public class MPD218Extension extends ControllerExtension {
          int finalI = i;
          trackBank.getItemAt(i).arm().addValueObserver( (value) -> {
             midiOutPort.sendMidi(0x90, 36 + finalI, value ? 127 : 0);
+         });
+         trackBank.getItemAt(i).mute().addValueObserver( (value) -> {
             midiOutPort.sendMidi(0x90, 52 + finalI, value ? 127 : 0);
          });
       }
