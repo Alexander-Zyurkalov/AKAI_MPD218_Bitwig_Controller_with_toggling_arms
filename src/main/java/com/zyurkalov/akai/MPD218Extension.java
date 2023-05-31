@@ -33,9 +33,11 @@ public class MPD218Extension extends ControllerExtension {
       trackBank = getHost().createTrackBank(4*4, 0, 0);
       for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
          trackBank.getItemAt(i).arm().markInterested();
+         trackBank.getItemAt(i).mute().markInterested();
          int finalI = i;
          trackBank.getItemAt(i).arm().addValueObserver( (value) -> {
             midiOutPort.sendMidi(0x90, 36 + finalI, value ? 127 : 0);
+            midiOutPort.sendMidi(0x90, 52 + finalI, value ? 127 : 0);
          });
       }
       getHost().println("Akai Professional MPD218 Bitwig Controller Script");
@@ -47,9 +49,13 @@ public class MPD218Extension extends ControllerExtension {
          remoteControlsPage.getParameter(data1).inc(uint7ToInt7(data2), 128);
       }
       else if (status == 0x80) {
-         int num = data1 - 36;
-         if (num >=0 && num < trackBank.getSizeOfBank()) {
-            trackBank.getItemAt(num).arm().toggle();
+         int armNum = data1 - 36;
+         if (armNum >=0 && armNum < trackBank.getSizeOfBank()) {
+            trackBank.getItemAt(armNum).arm().toggle();
+         }
+         int muteNum = data1 - 52;
+         if (muteNum >=0 && muteNum < trackBank.getSizeOfBank()) {
+             trackBank.getItemAt(muteNum).mute().toggle();
          }
       }
    }
