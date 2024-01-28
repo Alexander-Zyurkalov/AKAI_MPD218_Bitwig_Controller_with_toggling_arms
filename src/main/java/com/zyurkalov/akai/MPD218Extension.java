@@ -64,6 +64,10 @@ public class MPD218Extension extends ControllerExtension {
             }
             int soloNum = data1 - 68;
             if (soloNum >= 0 && soloNum < trackBank.getSizeOfBank()) {
+                if (!trackBank.getItemAt(soloNum).solo().get())
+                    for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
+                        trackBank.getItemAt(i).solo().set(false);
+                    }
                 trackBank.getItemAt(soloNum).solo().toggle();
             }
         }
